@@ -35,7 +35,17 @@ cd "$CERT_DIR"
 # Download and extract easy-rsa
 echo "Downloading easy-rsa..."
 easy_rsa_url='https://github.com/OpenVPN/easy-rsa/releases/download/v3.2.4/EasyRSA-3.2.4.tgz'
-wget -qO- "$easy_rsa_url" | tar xz --strip-components 1
+if ! wget -qO- "$easy_rsa_url" | tar xz --strip-components 1; then
+	echo "Failed to download or extract easy-rsa. Please check your internet connection."
+	exit 1
+fi
+
+# Check if easyrsa exists and make it executable
+if [[ ! -f ./easyrsa ]]; then
+	echo "Error: easyrsa file not found after extraction."
+	exit 1
+fi
+chmod +x ./easyrsa
 
 # Initialize PKI
 echo "Initializing PKI..."
@@ -89,9 +99,15 @@ echo "Generating TLS-Crypt key..."
 ./easyrsa gen-tls-crypt-key
 
 # Set proper permissions
-chmod 600 pki/private/*
-chmod 644 pki/issued/*
-chmod 644 pki/ca.crt
+if [[ -d pki/private ]]; then
+	chmod 600 pki/private/* 2>/dev/null
+fi
+if [[ -d pki/issued ]]; then
+	chmod 644 pki/issued/* 2>/dev/null
+fi
+if [[ -f pki/ca.crt ]]; then
+	chmod 644 pki/ca.crt
+fi
 
 # Summary
 echo ""
